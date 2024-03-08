@@ -7,6 +7,8 @@ fn main() {
     // Create a context from a sdl2 window
     let (gl, window, mut events_loop, _context) = create_sdl2_context();
 
+    let cam = camera::Camera::init();
+
     let basic = shader::Shader::build(&gl, "res/shaders/basic.vert", "res/shaders/basic.frag");
     basic.activate(&gl);
     basic.set_f32(&gl, "blue", 0.8);
