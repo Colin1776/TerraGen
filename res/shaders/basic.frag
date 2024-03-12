@@ -2,12 +2,11 @@
 
 precision mediump float;
 
-in vec3 position;
-out vec4 color;
+in vec2 tex_coord;
 
-uniform float blue;
+out vec4 color;
 
 void main()
 {
-    color = vec4(1.0, 1.0, blue, 1.0);
+    color = vec4(1.0, 1.0, 1.0, 1.0);
 }

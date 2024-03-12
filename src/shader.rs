@@ -1,4 +1,7 @@
+use cgmath::*;
 use glow::*;
+
+type Mat4 = Matrix4<f32>;
 
 pub struct Shader {
     pub prog: NativeProgram,
@@ -58,6 +61,22 @@ impl Shader {
         unsafe {
             let uniform_location = gl.get_uniform_location(self.prog, name);
             gl.uniform_1_f32(uniform_location.as_ref(), val);
+        }
+    }
+
+    fn mat4_to_arr(&self, val: Mat4) -> [f32; 16] {
+        let x: [f32; 16] = [
+            val.x.x, val.x.y, val.x.z, val.x.w, val.y.x, val.y.y, val.y.z, val.y.w, val.z.x,
+            val.z.y, val.z.z, val.z.w, val.w.x, val.w.y, val.w.z, val.w.w,
+        ];
+
+        x
+    }
+
+    pub fn set_mat4(&self, gl: &glow::Context, name: &str, val: Mat4) {
+        unsafe {
+            let uniform_location = gl.get_uniform_location(self.prog, name);
+            gl.uniform_matrix_4_f32_slice(uniform_location.as_ref(), false, &self.mat4_to_arr(val));
         }
     }
 }
