@@ -14,8 +14,8 @@ impl Chunk {
     pub(super) fn gen() -> Chunk {
         let mut chunk = Chunk { smth: [0; 262144] };
 
-        for x in 0..1024 {
-            for z in 0..1024 {
+        for x in 0..16 {
+            for z in 0..16 {
                 // get the height of the surface
                 let y = 3;
 
@@ -31,9 +31,9 @@ impl Chunk {
         chunk
     }
 
-    fn val_at(&self, x: usize, y: usize, z: usize) -> i32 {
-        return self.smth[(x * 1024 * 16) + (z * 1024) + y];
-    }
+    // fn val_at(&self, x: usize, y: usize, z: usize) -> i32 {
+    //     return self.smth[(x * 1024 * 16) + (z * 1024) + y];
+    // }
 
     pub(super) fn get_smth(&self) -> [i32; 262144] {
         self.smth
