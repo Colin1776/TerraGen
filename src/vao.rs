@@ -67,9 +67,9 @@ impl ChunkVAO {
                             // gonna wanna add checks to make sure the face isn't covered yeah
 
                             for vert in 0..6 {
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48)] * x as f32);
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 1] * y as f32);
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 2] * z as f32);
+                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48)] + x as f32);
+                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 1] + y as f32);
+                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 2] + z as f32);
                                 yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 3]);
                                 yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 4]);
                                 yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 5]);

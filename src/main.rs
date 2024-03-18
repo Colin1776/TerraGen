@@ -3,7 +3,7 @@ use glow::*;
 
 use sdl2::event::WindowEvent;
 
-type Vec3 = cgmath::Vector3<f32>;
+// type Vec3 = cgmath::Vector3<f32>;
 type Mat4 = cgmath::Matrix4<f32>;
 
 mod camera;

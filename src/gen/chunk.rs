@@ -11,20 +11,20 @@ pub struct Chunk {
 }
 
 impl Chunk {
-    pub(super) fn gen() -> Chunk {
+    pub(super) fn gen(cx: i32, cz: i32, noise: fn(i32, i32) -> i32) -> Chunk {
         let mut chunk = Chunk { smth: [0; 262144] };
 
         for x in 0..16 {
             for z in 0..16 {
                 // get the height of the surface
-                let y = 3;
+                let y = noise(x + (cx * 16), z + (cz * 16));
 
                 // fill up to the surface layer with rock
                 for i in 0..y {
-                    chunk.smth[(x * 1024 * 16) + (z * 1024) + (i)] = 1;
+                    chunk.smth[((x * 1024 * 16) + (z * 1024) + i) as usize] = 1;
                 }
 
-                chunk.smth[(x * 1024 * 16) + (z * 1024) + y] = 2;
+                chunk.smth[((x * 1024 * 16) + (z * 1024) + y) as usize] = 2;
             }
         }
 

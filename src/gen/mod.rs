@@ -1,7 +1,8 @@
 pub mod chunk;
+mod noise;
 
 fn gen_base_chunk() -> chunk::Chunk {
-    let chunk = chunk::Chunk::gen();
+    let chunk = chunk::Chunk::gen(0, 0, noise::flat);
 
     chunk
 }
