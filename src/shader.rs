@@ -57,6 +57,13 @@ impl Shader {
         }
     }
 
+    pub fn set_i32(&self, gl: &glow::Context, name: &str, val: i32) {
+        unsafe {
+            let uniform_location = gl.get_uniform_location(self.prog, name);
+            gl.uniform_1_i32(uniform_location.as_ref(), val);
+        }
+    }
+
     pub fn set_f32(&self, gl: &glow::Context, name: &str, val: f32) {
         unsafe {
             let uniform_location = gl.get_uniform_location(self.prog, name);

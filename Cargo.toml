@@ -11,4 +11,5 @@ opt-level = 3
 [dependencies]
 cgmath = "0.18.0"
 glow = "0.13.1"
+image = "0.25.0"
 sdl2 = "0.36.0"

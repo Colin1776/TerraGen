@@ -1,5 +1,7 @@
 use cgmath::*;
 use glow::*;
+use image::*;
+use std::path::Path;
 
 use sdl2::event::WindowEvent;
 
@@ -20,6 +22,9 @@ fn main() {
     let basic = shader::Shader::build(&gl, "res/shaders/basic.vert", "res/shaders/basic.frag");
     basic.activate(&gl);
     basic.set_f32(&gl, "blue", 0.8);
+
+    let texture = load_texture(&gl);
+    basic.set_i32(&gl, "tex", 0);
 
     let x = gen::get_base_chunk();
 
@@ -46,9 +51,14 @@ fn main() {
         gl.enable(glow::CULL_FACE);
     }
 
+    let _interval = window.subsystem().gl_set_swap_interval(0);
+
     'render: loop {
         let delta_time = old.elapsed().as_secs_f32();
         old = std::time::Instant::now();
+
+        let fps = 1.0 / delta_time;
+        println!("{}", fps);
 
         let x = handle_events(
             &_sdl,
@@ -76,6 +86,8 @@ fn main() {
         unsafe {
             gl.clear_color(0.53, 0.81, 0.92, 1.0);
             gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+
+            gl.bind_texture(glow::TEXTURE_2D, Some(texture));
 
             gl.bind_vertex_array(Some(y.vao));
             gl.draw_arrays(glow::TRIANGLES, 0, 36864);
@@ -113,84 +125,39 @@ fn create_sdl2_context() -> (
     }
 }
 
-// fn create_vertex_buffer(gl: &glow::Context) -> (NativeBuffer, NativeVertexArray) {
-//     // let triangle_vertices = [0.5f32, 1.0f32, 0.0f32, 0.0f32, 1.0f32, 0.0f32];
+fn load_texture(gl: &glow::Context) -> NativeTexture {
+    let img = image::open(&Path::new("res/textures/stone.png")).expect("No texture :(");
+    let data = img.as_bytes();
+    unsafe {
+        let texture = gl.create_texture().unwrap();
+        gl.bind_texture(glow::TEXTURE_2D, Some(texture));
+        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::REPEAT as i32);
+        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_MIN_FILTER,
+            glow::LINEAR as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_MAG_FILTER,
+            glow::LINEAR as i32,
+        );
+        gl.tex_image_2d(
+            glow::TEXTURE_2D,
+            0,
+            glow::R8 as i32,
+            img.width() as i32,
+            img.height() as i32,
+            0,
+            glow::RED as u32,
+            glow::UNSIGNED_BYTE,
+            Some(data),
+        );
 
-//     // cube (hope this is right) :D
-//     let cube_vertices: [f32; 288] = [
-//         // verts            // normals        // text UVs
-
-//         // face 0 = south
-//         0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, // vert 1
-//         0.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, // vert 2
-//         1.0, 1.0, 0.0, 0.0, 0.0, -1.0, 1.0, 1.0, // vert 3
-//         1.0, 1.0, 0.0, 0.0, 0.0, -1.0, 1.0, 1.0, // vert 4
-//         1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, // vert 5
-//         0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, // vert 6
-//         // face 1 = north
-//         1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, // vert 1
-//         1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, // vert 2
-//         0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // vert 3
-//         0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // vert 4
-//         0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, // vert 5
-//         1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, // vert 6
-//         // face 2 = west
-//         0.0, 0.0, 1.0, -1.0, -0.0, -0.0, 0.0, 0.0, // vert 1
-//         0.0, 1.0, 1.0, -1.0, -0.0, -0.0, 0.0, 1.0, // vert 2
-//         0.0, 1.0, 0.0, -1.0, -0.0, -0.0, 1.0, 1.0, // vert 3
-//         0.0, 1.0, 0.0, -1.0, -0.0, -0.0, 1.0, 1.0, // vert 4
-//         0.0, 0.0, 0.0, -1.0, -0.0, -0.0, 1.0, 0.0, // vert 5
-//         0.0, 0.0, 1.0, -1.0, -0.0, -0.0, 0.0, 0.0, // vert 6
-//         // face 3 = east
-//         1.0, 0.0, 0.0, 1.0, 0.0, -0.0, 0.0, 0.0, // vert 1
-//         1.0, 1.0, 0.0, 1.0, 0.0, -0.0, 0.0, 1.0, // vert 2
-//         1.0, 1.0, 1.0, 1.0, 0.0, -0.0, 1.0, 1.0, // vert 3
-//         1.0, 1.0, 1.0, 1.0, 0.0, -0.0, 1.0, 1.0, // vert 4
-//         1.0, 0.0, 1.0, 1.0, 0.0, -0.0, 1.0, 0.0, // vert 5
-//         1.0, 0.0, 0.0, 1.0, 0.0, -0.0, 0.0, 0.0, // vert 6
-//         // face 4 = top
-//         0.0, 1.0, 0.0, -0.0, 1.0, 0.0, 0.0, 0.0, // vert 1
-//         0.0, 1.0, 1.0, -0.0, 1.0, 0.0, 0.0, 1.0, // vert 2
-//         1.0, 1.0, 1.0, -0.0, 1.0, 0.0, 1.0, 1.0, // vert 3
-//         1.0, 1.0, 1.0, -0.0, 1.0, 0.0, 1.0, 1.0, // vert 4
-//         1.0, 1.0, 0.0, -0.0, 1.0, 0.0, 1.0, 0.0, // vert 5
-//         0.0, 1.0, 0.0, -0.0, 1.0, 0.0, 0.0, 0.0, // vert 6
-//         // face 5 = bottom
-//         1.0, 0.0, 0.0, -0.0, -1.0, -0.0, 0.0, 0.0, // vert 1
-//         1.0, 0.0, 1.0, -0.0, -1.0, -0.0, 0.0, 1.0, // vert 2
-//         0.0, 0.0, 1.0, -0.0, -1.0, -0.0, 1.0, 1.0, // vert 3
-//         0.0, 0.0, 1.0, -0.0, -1.0, -0.0, 1.0, 1.0, // vert 4
-//         0.0, 0.0, 0.0, -0.0, -1.0, -0.0, 1.0, 0.0, // vert 5
-//         1.0, 0.0, 0.0, -0.0, -1.0, -0.0, 0.0, 0.0, // vert 6
-//     ];
-
-//     unsafe {
-//         // let triangle_vertices_u8: &[u8] = core::slice::from_raw_parts(
-//         //     triangle_vertices.as_ptr() as *const u8,
-//         //     triangle_vertices.len() * core::mem::size_of::<f32>(),
-//         // );
-
-//         let cube_vertices_u8: &[u8] = core::slice::from_raw_parts(
-//             cube_vertices.as_ptr() as *const u8,
-//             cube_vertices.len() * core::mem::size_of::<f32>(),
-//         );
-
-//         let vbo = gl.create_buffer().unwrap();
-//         gl.bind_buffer(glow::ARRAY_BUFFER, Some(vbo));
-//         gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, cube_vertices_u8, glow::STATIC_DRAW);
-
-//         let vao: NativeVertexArray = gl.create_vertex_array().unwrap();
-//         gl.bind_vertex_array(Some(vao));
-//         gl.enable_vertex_attrib_array(0);
-//         gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, 8 * 4, 0);
-//         gl.enable_vertex_attrib_array(1);
-//         gl.vertex_attrib_pointer_f32(1, 3, glow::FLOAT, false, 8 * 4, 3 * 4);
-//         gl.enable_vertex_attrib_array(2);
-//         gl.vertex_attrib_pointer_f32(2, 2, glow::FLOAT, false, 8 * 4, 6 * 4);
-
-//         (vbo, vao)
-//     }
-// }
+        texture
+    }
+}
 
 fn handle_events(
     sdl: &sdl2::Sdl,
