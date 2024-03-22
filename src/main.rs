@@ -90,7 +90,7 @@ fn main() {
             gl.bind_texture(glow::TEXTURE_2D, Some(texture));
 
             gl.bind_vertex_array(Some(y.vao));
-            gl.draw_arrays(glow::TRIANGLES, 0, 36864);
+            gl.draw_arrays(glow::TRIANGLES, 0, y.num_verts as i32);
         }
 
         window.gl_swap_window();
@@ -146,11 +146,11 @@ fn load_texture(gl: &glow::Context) -> NativeTexture {
         gl.tex_image_2d(
             glow::TEXTURE_2D,
             0,
-            glow::R8 as i32,
+            glow::RGB as i32,
             img.width() as i32,
             img.height() as i32,
             0,
-            glow::RED as u32,
+            glow::RGB as u32,
             glow::UNSIGNED_BYTE,
             Some(data),
         );

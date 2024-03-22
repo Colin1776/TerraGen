@@ -50,6 +50,7 @@ const CUBE_VERTICES: [f32; 288] = [
 pub struct ChunkVAO {
     pub vao: NativeVertexArray,
     pub vbo: NativeBuffer,
+    pub num_verts: usize,
 }
 
 impl ChunkVAO {
@@ -101,7 +102,12 @@ impl ChunkVAO {
             gl.enable_vertex_attrib_array(2);
             gl.vertex_attrib_pointer_f32(2, 2, glow::FLOAT, false, 8 * 4, 6 * 4);
 
-            let ret = ChunkVAO { vao, vbo };
+            let num_verts = yea.len() / 8;
+            let ret = ChunkVAO {
+                vao,
+                vbo,
+                num_verts,
+            };
 
             ret
         }
