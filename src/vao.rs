@@ -59,6 +59,7 @@ pub struct ChunkVAO {
 impl ChunkVAO {
     pub fn init(gl: &glow::Context, smth: [i32; 262144]) -> ChunkVAO {
         let mut yea: Vec<f32> = Vec::new();
+        // yea.reserve(80000000);
 
         // add each cube face by face.. can add culling manually or something idk
         for x in 0..16 {

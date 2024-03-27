@@ -13,8 +13,10 @@ mod shader;
 mod vao;
 
 mod gen;
+use gen::piece;
 
 fn main() {
+    /* Initialize rendering stuff like window, camera, shaders, textures, etc */
     let (gl, window, mut events_loop, _context, _sdl) = create_sdl2_context();
 
     let mut cam = camera::Camera::init();
@@ -25,6 +27,23 @@ fn main() {
 
     let texture = load_texture(&gl);
     basic.set_i32(&gl, "tex", 0);
+
+    /* Initialize the terrain generator */
+    let mut pieces: Vec<piece::Piece> = Vec::new();
+    pieces.push(piece::Piece {
+        name: "air".to_string(),
+        material: piece::Material::AIR,
+    })
+    pieces.push(piece::Piece {
+        name: "stone".to_string(),
+        material: piece::Material::ROCK,
+    });
+    pieces.push(piece::Piece {
+        name: "grass".to_string(),
+        material: piece::Material::SOIL,
+    })
+
+    
 
     let chunk0 = gen::get_chunk(0, 0);
     let chunk1 = gen::get_chunk(0, 1);
