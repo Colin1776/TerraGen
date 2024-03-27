@@ -1,44 +1,47 @@
+// use cgmath::vec3;
 use glow::*;
+
+// type Vec3 = cgmath::Vector3<f32>;
 
 const CUBE_VERTICES: [f32; 288] = [
     // verts            // normals        // text UVs
 
-    // face 0 = south
+    // face 0 = south - faces towards -z
     0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, // vert 1
     0.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, // vert 2
     1.0, 1.0, 0.0, 0.0, 0.0, -1.0, 1.0, 1.0, // vert 3
     1.0, 1.0, 0.0, 0.0, 0.0, -1.0, 1.0, 1.0, // vert 4
     1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, // vert 5
     0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, // vert 6
-    // face 1 = north
+    // face 1 = north - faces towards +z
     1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, // vert 1
     1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, // vert 2
     0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // vert 3
     0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // vert 4
     0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, // vert 5
     1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, // vert 6
-    // face 2 = west
+    // face 2 = west - faces towards -x
     0.0, 0.0, 1.0, -1.0, -0.0, -0.0, 0.0, 0.0, // vert 1
     0.0, 1.0, 1.0, -1.0, -0.0, -0.0, 0.0, 1.0, // vert 2
     0.0, 1.0, 0.0, -1.0, -0.0, -0.0, 1.0, 1.0, // vert 3
     0.0, 1.0, 0.0, -1.0, -0.0, -0.0, 1.0, 1.0, // vert 4
     0.0, 0.0, 0.0, -1.0, -0.0, -0.0, 1.0, 0.0, // vert 5
     0.0, 0.0, 1.0, -1.0, -0.0, -0.0, 0.0, 0.0, // vert 6
-    // face 3 = east
+    // face 3 = east - faces towards +x
     1.0, 0.0, 0.0, 1.0, 0.0, -0.0, 0.0, 0.0, // vert 1
     1.0, 1.0, 0.0, 1.0, 0.0, -0.0, 0.0, 1.0, // vert 2
     1.0, 1.0, 1.0, 1.0, 0.0, -0.0, 1.0, 1.0, // vert 3
     1.0, 1.0, 1.0, 1.0, 0.0, -0.0, 1.0, 1.0, // vert 4
     1.0, 0.0, 1.0, 1.0, 0.0, -0.0, 1.0, 0.0, // vert 5
     1.0, 0.0, 0.0, 1.0, 0.0, -0.0, 0.0, 0.0, // vert 6
-    // face 4 = top
+    // face 4 = top - faces towards +y
     0.0, 1.0, 0.0, -0.0, 1.0, 0.0, 0.0, 0.0, // vert 1
     0.0, 1.0, 1.0, -0.0, 1.0, 0.0, 0.0, 1.0, // vert 2
     1.0, 1.0, 1.0, -0.0, 1.0, 0.0, 1.0, 1.0, // vert 3
     1.0, 1.0, 1.0, -0.0, 1.0, 0.0, 1.0, 1.0, // vert 4
     1.0, 1.0, 0.0, -0.0, 1.0, 0.0, 1.0, 0.0, // vert 5
     0.0, 1.0, 0.0, -0.0, 1.0, 0.0, 0.0, 0.0, // vert 6
-    // face 5 = bottom
+    // face 5 = bottom - faces towards -y
     1.0, 0.0, 0.0, -0.0, -1.0, -0.0, 0.0, 0.0, // vert 1
     1.0, 0.0, 1.0, -0.0, -1.0, -0.0, 0.0, 1.0, // vert 2
     0.0, 0.0, 1.0, -0.0, -1.0, -0.0, 1.0, 1.0, // vert 3
@@ -66,16 +69,73 @@ impl ChunkVAO {
                     if val != 0 {
                         for face in 0..6 {
                             // gonna wanna add checks to make sure the face isn't covered yeah
+                            let mut show_face = true;
 
-                            for vert in 0..6 {
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48)] + x as f32);
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 1] + y as f32);
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 2] + z as f32);
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 3]);
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 4]);
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 5]);
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 6]);
-                                yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 7]);
+                            if face == 0 {
+                                if z != 0 {
+                                    let south = smth[(x * 1024 * 16) + ((z - 1) * 1024) + y];
+
+                                    if south != 0 {
+                                        show_face = false;
+                                    }
+                                }
+                            } else if face == 1 {
+                                if z != 15 {
+                                    let north = smth[(x * 1024 * 16) + ((z + 1) * 1024) + y];
+
+                                    if north != 0 {
+                                        show_face = false;
+                                    }
+                                }
+                            } else if face == 2 {
+                                if x != 0 {
+                                    let west = smth[((x - 1) * 1024 * 16) + (z * 1024) + y];
+
+                                    if west != 0 {
+                                        show_face = false;
+                                    }
+                                }
+                            } else if face == 3 {
+                                if x != 15 {
+                                    let east = smth[((x + 1) * 1024 * 16) + (z * 1024) + y];
+
+                                    if east != 0 {
+                                        show_face = false;
+                                    }
+                                }
+                            } else if face == 4 {
+                                if y != 1023 {
+                                    let above = smth[(x * 1024 * 16) + (z * 1024) + y + 1];
+
+                                    if above != 0 {
+                                        show_face = false;
+                                    }
+                                }
+                            } else if face == 5 {
+                                if y != 0 {
+                                    let below = smth[(x * 1024 * 16) + (z * 1024) + y - 1];
+
+                                    if below != 0 {
+                                        show_face = false;
+                                    }
+                                }
+                            }
+
+                            if show_face {
+                                for vert in 0..6 {
+                                    yea.push(CUBE_VERTICES[(vert * 8) + (face * 48)] + x as f32);
+                                    yea.push(
+                                        CUBE_VERTICES[(vert * 8) + (face * 48) + 1] + y as f32,
+                                    );
+                                    yea.push(
+                                        CUBE_VERTICES[(vert * 8) + (face * 48) + 2] + z as f32,
+                                    );
+                                    yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 3]);
+                                    yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 4]);
+                                    yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 5]);
+                                    yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 6]);
+                                    yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 7]);
+                                }
                             }
                         }
                     }
@@ -108,6 +168,8 @@ impl ChunkVAO {
                 vbo,
                 num_verts,
             };
+
+            println!("{}", std::mem::size_of_val(&vbo));
 
             ret
         }
