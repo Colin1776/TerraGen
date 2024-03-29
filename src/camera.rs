@@ -69,7 +69,7 @@ impl Camera {
         self.front = front.normalize();
     }
 
-    #[allow(dead_code)]
+    #[allow(deprecated)]
     pub fn get_view(&self) -> Mat4 {
         Mat4::look_at(self.pos, self.pos + self.front, self.up)
     }

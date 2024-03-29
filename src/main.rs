@@ -1,6 +1,6 @@
 use cgmath::*;
 use glow::*;
-use image::*;
+// use image::*;
 use std::path::Path;
 
 use sdl2::event::WindowEvent;
@@ -13,8 +13,10 @@ mod shader;
 mod vao;
 
 mod gen;
+use gen::piece;
 
 fn main() {
+    /* Initialize rendering stuff like window, camera, shaders, textures, etc */
     let (gl, window, mut events_loop, _context, _sdl) = create_sdl2_context();
 
     let mut cam = camera::Camera::init();
@@ -26,16 +28,38 @@ fn main() {
     let texture = load_texture(&gl);
     basic.set_i32(&gl, "tex", 0);
 
-    let x = gen::get_base_chunk();
+    /* Initialize the terrain generator */
+
+    // terragen will return a value of 0 to represent air in the terrain
+    //                                 1 to represent stone in the terrain
+    //                                 2 to represent grass in the terrain
+    let mut pieces: Vec<piece::Piece> = Vec::new();
+    pieces.push(piece::Piece {
+        name: "air".to_string(),
+        material: piece::Material::AIR,
+    });
+    pieces.push(piece::Piece {
+        name: "stone".to_string(),
+        material: piece::Material::ROCK,
+    });
+    pieces.push(piece::Piece {
+        name: "grass".to_string(),
+        material: piece::Material::SOIL,
+    });
+
+    let chunk0 = gen::get_chunk(0, 0);
+    let chunk1 = gen::get_chunk(0, 1);
 
     let start = std::time::Instant::now();
 
-    let y = vao::ChunkVAO::init(&gl, x);
+    let base_chunk = vao::ChunkVAO::init(&gl, chunk0);
 
     let finish = std::time::Instant::now();
 
     let elps = finish - start;
     println!("{:?}", elps);
+
+    let other_chunk = vao::ChunkVAO::init(&gl, chunk1);
 
     let mut prev_keys: std::collections::HashSet<sdl2::keyboard::Keycode> =
         std::collections::HashSet::new();
@@ -46,19 +70,25 @@ fn main() {
     _sdl.mouse().set_relative_mouse_mode(true);
 
     let mut old = std::time::Instant::now();
+    let mut timer = 0.0;
 
     unsafe {
         gl.enable(glow::CULL_FACE);
+        gl.enable(glow::DEPTH_TEST);
     }
 
     let _interval = window.subsystem().gl_set_swap_interval(0);
 
     'render: loop {
         let delta_time = old.elapsed().as_secs_f32();
+        timer += delta_time;
         old = std::time::Instant::now();
 
-        let fps = 1.0 / delta_time;
-        println!("{}", fps);
+        if timer >= 1.0 {
+            let fps = 1.0 / delta_time;
+            println!("{}", fps);
+            timer = 0.0;
+        }
 
         let x = handle_events(
             &_sdl,
@@ -77,11 +107,11 @@ fn main() {
 
         let projection = cgmath::perspective(Deg(90.0), win_width / win_height, 0.1, 100.0);
         let view = cam.get_view();
-        let model = Mat4::identity();
+        // let model = Mat4::identity();
 
         basic.set_mat4(&gl, "projection", projection);
         basic.set_mat4(&gl, "view", view);
-        basic.set_mat4(&gl, "model", model);
+        // basic.set_mat4(&gl, "model", model);
 
         unsafe {
             gl.clear_color(0.53, 0.81, 0.92, 1.0);
@@ -89,8 +119,17 @@ fn main() {
 
             gl.bind_texture(glow::TEXTURE_2D, Some(texture));
 
-            gl.bind_vertex_array(Some(y.vao));
-            gl.draw_arrays(glow::TRIANGLES, 0, y.num_verts as i32);
+            let mut model = Mat4::identity();
+            basic.set_mat4(&gl, "model", model);
+
+            gl.bind_vertex_array(Some(base_chunk.vao));
+            gl.draw_arrays(glow::TRIANGLES, 0, base_chunk.num_verts as i32);
+
+            model = Mat4::from_translation(vec3(0.0, 0.0, 16.0));
+            basic.set_mat4(&gl, "model", model);
+
+            gl.bind_vertex_array(Some(other_chunk.vao));
+            gl.draw_arrays(glow::TRIANGLES, 0, other_chunk.num_verts as i32);
         }
 
         window.gl_swap_window();
@@ -126,7 +165,11 @@ fn create_sdl2_context() -> (
 }
 
 fn load_texture(gl: &glow::Context) -> NativeTexture {
-    let img = image::open(&Path::new("res/textures/stone.png")).expect("No texture :(");
+    let img = image::open(&Path::new("res/textures/texture_atlas.png"))
+        .expect("No texture :(")
+        .flipv()
+        .fliph();
+    // img.fliph();
     let data = img.as_bytes();
     unsafe {
         let texture = gl.create_texture().unwrap();
@@ -154,6 +197,7 @@ fn load_texture(gl: &glow::Context) -> NativeTexture {
             glow::UNSIGNED_BYTE,
             Some(data),
         );
+        gl.generate_mipmap(glow::TEXTURE_2D);
 
         texture
     }
