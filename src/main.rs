@@ -50,8 +50,8 @@ fn main() {
     /* Generate chunks and vaos */
     let mut chunk_vaos: Vec<vao::ChunkVAO> = Vec::new();
 
-    for x in 0..3 {
-        for y in 0..3 {
+    for x in -2..3 {
+        for y in -2..3 {
             let chunk = gen::get_chunk(x, y);
             let start = std::time::Instant::now();
             let chunk_vao = vao::ChunkVAO::init(&gl, chunk, (x, y));
@@ -106,7 +106,7 @@ fn main() {
             break 'render;
         }
 
-        let projection = cgmath::perspective(Deg(90.0), win_width / win_height, 0.1, 100.0);
+        let projection = cgmath::perspective(Deg(90.0), win_width / win_height, 0.1, 10000.0);
         let view = cam.get_view();
         let mut model = Mat4::identity();
 
@@ -277,10 +277,11 @@ fn handle_events(
 
     *prev_keys = keys;
 
-    let speed: f32 = 2.5 * delta_time;
+    let mut speed: f32 = 2.5 * delta_time;
 
     for key in current_keys {
         match key {
+            sdl2::keyboard::Keycode::LCtrl => speed *= 10 as f32,
             sdl2::keyboard::Keycode::W => cam.move_forward(speed as f32),
             sdl2::keyboard::Keycode::A => cam.move_right(-speed),
             sdl2::keyboard::Keycode::S => cam.move_forward(-speed),
