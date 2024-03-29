@@ -60,19 +60,24 @@ impl ChunkVAO {
     pub fn init(gl: &glow::Context, smth: [i32; 262144]) -> ChunkVAO {
         let mut yea: Vec<f32> = Vec::new();
 
+        let tex_size = 16;
+        let atlas_size = 256;
+        let tex_per_row = atlas_size / tex_size;
+
         // add each cube face by face.. can add culling manually or something idk
         for x in 0..16 {
             for z in 0..16 {
                 for y in 0..1024 {
                     let val = smth[(x * 1024 * 16) + (z * 1024) + y];
 
-                    let (tex_x_offset, tex_y_offset) = match val {
-                        1 => (0.0, 0.0),
-                        2 => (1.0 / 16.0, 0.0),
-                        _ => (0.0, 0.0),
-                    };
-
                     if val != 0 {
+                        let (tex_x_offset, tex_y_offset) = {
+                            let temp_x: i32 = (val - 1) % tex_per_row;
+                            let temp_y: i32 = (val - 1) / tex_per_row;
+
+                            (temp_x as f32 / 16.0, temp_y as f32 / 16.0)
+                        };
+
                         for face in 0..6 {
                             // gonna wanna add checks to make sure the face isn't covered yeah
                             let mut show_face = true;
