@@ -59,13 +59,18 @@ pub struct ChunkVAO {
 impl ChunkVAO {
     pub fn init(gl: &glow::Context, smth: [i32; 262144]) -> ChunkVAO {
         let mut yea: Vec<f32> = Vec::new();
-        // yea.reserve(80000000);
 
         // add each cube face by face.. can add culling manually or something idk
         for x in 0..16 {
             for z in 0..16 {
                 for y in 0..1024 {
                     let val = smth[(x * 1024 * 16) + (z * 1024) + y];
+
+                    let (tex_x_offset, tex_y_offset) = match val {
+                        1 => (0.0, 0.0),
+                        2 => (1.0 / 16.0, 0.0),
+                        _ => (0.0, 0.0),
+                    };
 
                     if val != 0 {
                         for face in 0..6 {
@@ -134,8 +139,14 @@ impl ChunkVAO {
                                     yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 3]);
                                     yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 4]);
                                     yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 5]);
-                                    yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 6]);
-                                    yea.push(CUBE_VERTICES[(vert * 8) + (face * 48) + 7]);
+                                    yea.push(
+                                        CUBE_VERTICES[(vert * 8) + (face * 48) + 6] / 16.0
+                                            + tex_x_offset,
+                                    );
+                                    yea.push(
+                                        CUBE_VERTICES[(vert * 8) + (face * 48) + 7] / 16.0
+                                            + tex_y_offset,
+                                    );
                                 }
                             }
                         }
@@ -169,8 +180,6 @@ impl ChunkVAO {
                 vbo,
                 num_verts,
             };
-
-            println!("{}", std::mem::size_of_val(&vbo));
 
             ret
         }

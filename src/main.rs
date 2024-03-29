@@ -29,11 +29,15 @@ fn main() {
     basic.set_i32(&gl, "tex", 0);
 
     /* Initialize the terrain generator */
+
+    // terragen will return a value of 0 to represent air in the terrain
+    //                                 1 to represent stone in the terrain
+    //                                 2 to represent grass in the terrain
     let mut pieces: Vec<piece::Piece> = Vec::new();
     pieces.push(piece::Piece {
         name: "air".to_string(),
         material: piece::Material::AIR,
-    })
+    });
     pieces.push(piece::Piece {
         name: "stone".to_string(),
         material: piece::Material::ROCK,
@@ -41,9 +45,7 @@ fn main() {
     pieces.push(piece::Piece {
         name: "grass".to_string(),
         material: piece::Material::SOIL,
-    })
-
-    
+    });
 
     let chunk0 = gen::get_chunk(0, 0);
     let chunk1 = gen::get_chunk(0, 1);
