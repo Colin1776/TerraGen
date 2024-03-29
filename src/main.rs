@@ -47,19 +47,20 @@ fn main() {
         material: piece::Material::SOIL,
     });
 
-    let chunk0 = gen::get_chunk(0, 0);
-    let chunk1 = gen::get_chunk(0, 1);
+    /* Generate chunks and vaos */
+    let mut chunk_vaos: Vec<vao::ChunkVAO> = Vec::new();
 
-    let start = std::time::Instant::now();
-
-    let base_chunk = vao::ChunkVAO::init(&gl, chunk0);
-
-    let finish = std::time::Instant::now();
-
-    let elps = finish - start;
-    println!("{:?}", elps);
-
-    let other_chunk = vao::ChunkVAO::init(&gl, chunk1);
+    for x in 0..3 {
+        for y in 0..3 {
+            let chunk = gen::get_chunk(x, y);
+            let start = std::time::Instant::now();
+            let chunk_vao = vao::ChunkVAO::init(&gl, chunk, (x, y));
+            let end = std::time::Instant::now();
+            let elps = end - start;
+            // println!("{:?}", elps);
+            chunk_vaos.push(chunk_vao);
+        }
+    }
 
     let mut prev_keys: std::collections::HashSet<sdl2::keyboard::Keycode> =
         std::collections::HashSet::new();
@@ -107,7 +108,7 @@ fn main() {
 
         let projection = cgmath::perspective(Deg(90.0), win_width / win_height, 0.1, 100.0);
         let view = cam.get_view();
-        // let model = Mat4::identity();
+        let mut model = Mat4::identity();
 
         basic.set_mat4(&gl, "projection", projection);
         basic.set_mat4(&gl, "view", view);
@@ -119,17 +120,30 @@ fn main() {
 
             gl.bind_texture(glow::TEXTURE_2D, Some(texture));
 
-            let mut model = Mat4::identity();
-            basic.set_mat4(&gl, "model", model);
+            for vao in &chunk_vaos {
+                model = Mat4::from_translation(vec3(
+                    vao.pos.0 as f32 * 16.0,
+                    0.0,
+                    vao.pos.1 as f32 * 16.0,
+                ));
+                basic.set_mat4(&gl, "model", model);
 
-            gl.bind_vertex_array(Some(base_chunk.vao));
-            gl.draw_arrays(glow::TRIANGLES, 0, base_chunk.num_verts as i32);
+                gl.bind_vertex_array(Some(vao.vao));
+                gl.draw_arrays(glow::TRIANGLES, 0, vao.num_verts as i32);
+            }
 
-            model = Mat4::from_translation(vec3(0.0, 0.0, 16.0));
-            basic.set_mat4(&gl, "model", model);
+            // gl.bind_vertex_array(Some(base_chunk.vao));
+            // gl.draw_arrays(glow::TRIANGLES, 0, base_chunk.num_verts as i32);
 
-            gl.bind_vertex_array(Some(other_chunk.vao));
-            gl.draw_arrays(glow::TRIANGLES, 0, other_chunk.num_verts as i32);
+            // model = Mat4::from_translation(vec3(
+            //     other_chunk.pos.0 as f32 * 16.0,
+            //     0.0,
+            //     other_chunk.pos.1 as f32 * 16.0,
+            // ));
+            // basic.set_mat4(&gl, "model", model);
+
+            // gl.bind_vertex_array(Some(other_chunk.vao));
+            // gl.draw_arrays(glow::TRIANGLES, 0, other_chunk.num_verts as i32);
         }
 
         window.gl_swap_window();
