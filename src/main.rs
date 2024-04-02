@@ -50,16 +50,13 @@ fn main() {
     /* Generate chunks and vaos */
     let mut chunk_vaos: Vec<vao::ChunkVAO> = Vec::new();
 
-    for x in -2..3 {
-        for y in -2..3 {
-            let chunk = gen::get_chunk(x, y);
-            let start = std::time::Instant::now();
-            let chunk_vao = vao::ChunkVAO::init(&gl, chunk, (x, y));
-            let end = std::time::Instant::now();
-            let elps = end - start;
-            // println!("{:?}", elps);
-            chunk_vaos.push(chunk_vao);
-        }
+    let mut gen = Generator::init();
+
+    {
+        let next_chunk = gen.next();
+        let chunk = gen::get_chunk(next_chunk.0, next_chunk.1);
+        let chunk_vao = vao::ChunkVAO::init(&gl, chunk, next_chunk);
+        chunk_vaos.push(chunk_vao);
     }
 
     let mut prev_keys: std::collections::HashSet<sdl2::keyboard::Keycode> =
@@ -71,7 +68,8 @@ fn main() {
     _sdl.mouse().set_relative_mouse_mode(true);
 
     let mut old = std::time::Instant::now();
-    let mut timer = 0.0;
+    let mut fps_timer = 0.0;
+    let mut gen_timer = 0.0;
 
     unsafe {
         gl.enable(glow::CULL_FACE);
@@ -82,13 +80,22 @@ fn main() {
 
     'render: loop {
         let delta_time = old.elapsed().as_secs_f32();
-        timer += delta_time;
+        fps_timer += delta_time;
+        gen_timer += delta_time;
         old = std::time::Instant::now();
 
-        if timer >= 1.0 {
+        if fps_timer >= 1.0 {
             let fps = 1.0 / delta_time;
             println!("{}", fps);
-            timer = 0.0;
+            fps_timer = 0.0;
+        }
+
+        if gen_timer >= 0.1 {
+            let next_chunk = gen.next();
+            let chunk = gen::get_chunk(next_chunk.0, next_chunk.1);
+            let chunk_vao = vao::ChunkVAO::init(&gl, chunk, next_chunk);
+            chunk_vaos.push(chunk_vao);
+            gen_timer = 0.0;
         }
 
         let x = handle_events(
@@ -183,23 +190,31 @@ fn load_texture(gl: &glow::Context) -> NativeTexture {
         .expect("No texture :(")
         .flipv()
         .fliph();
-    // img.fliph();
     let data = img.as_bytes();
     unsafe {
         let texture = gl.create_texture().unwrap();
         gl.bind_texture(glow::TEXTURE_2D, Some(texture));
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::REPEAT as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_WRAP_S,
+            glow::CLAMP_TO_EDGE as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_WRAP_T,
+            glow::CLAMP_TO_EDGE as i32,
+        );
         gl.tex_parameter_i32(
             glow::TEXTURE_2D,
             glow::TEXTURE_MIN_FILTER,
-            glow::NEAREST as i32,
+            glow::NEAREST_MIPMAP_NEAREST as i32,
         );
         gl.tex_parameter_i32(
             glow::TEXTURE_2D,
             glow::TEXTURE_MAG_FILTER,
             glow::NEAREST as i32,
         );
+        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAX_LEVEL, 4);
         gl.tex_image_2d(
             glow::TEXTURE_2D,
             0,
@@ -311,4 +326,45 @@ fn handle_events(
     }
 
     false
+}
+
+struct Generator {
+    pos: (i32, i32),
+    dir: (i32, i32),
+    steps_taken: u32,
+    steps_needed: u32,
+    dir_changes: u32,
+}
+
+impl Generator {
+    fn init() -> Generator {
+        let gen = Generator {
+            pos: (0, 0),
+            dir: (1, 0),
+            steps_taken: 0,
+            steps_needed: 1,
+            dir_changes: 0,
+        };
+
+        gen
+    }
+
+    fn next(&mut self) -> (i32, i32) {
+        let ret = self.pos;
+
+        if self.steps_taken == self.steps_needed {
+            self.dir = (-self.dir.1, self.dir.0);
+            self.steps_taken = 0;
+            self.dir_changes += 1;
+
+            if self.dir_changes % 2 == 0 {
+                self.steps_needed += 1;
+            }
+        }
+
+        self.pos = (self.pos.0 + self.dir.0, self.pos.1 + self.dir.1);
+        self.steps_taken += 1;
+
+        ret
+    }
 }
