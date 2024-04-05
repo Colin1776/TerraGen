@@ -59,6 +59,9 @@ fn main() {
         chunk_vaos.push(chunk_vao);
     }
 
+    let mut gen_chunks = false;
+
+    /* Stuff for input */
     let mut prev_keys: std::collections::HashSet<sdl2::keyboard::Keycode> =
         std::collections::HashSet::new();
 
@@ -76,7 +79,8 @@ fn main() {
         gl.enable(glow::DEPTH_TEST);
     }
 
-    let _interval = window.subsystem().gl_set_swap_interval(0);
+    /* Uncomment this to unlock fps */
+    // let _interval = window.subsystem().gl_set_swap_interval(0);
 
     'render: loop {
         let delta_time = old.elapsed().as_secs_f32();
@@ -90,11 +94,13 @@ fn main() {
             fps_timer = 0.0;
         }
 
-        if gen_timer >= 0.1 {
-            let next_chunk = gen.next();
-            let chunk = gen::get_chunk(next_chunk.0, next_chunk.1);
-            let chunk_vao = vao::ChunkVAO::init(&gl, chunk, next_chunk);
-            chunk_vaos.push(chunk_vao);
+        if gen_timer >= 0.05 {
+            if gen_chunks {
+                let next_chunk = gen.next();
+                let chunk = gen::get_chunk(next_chunk.0, next_chunk.1);
+                let chunk_vao = vao::ChunkVAO::init(&gl, chunk, next_chunk);
+                chunk_vaos.push(chunk_vao);
+            }
             gen_timer = 0.0;
         }
 
@@ -104,6 +110,7 @@ fn main() {
             &mut events_loop,
             &mut cam,
             &mut prev_keys,
+            &mut gen_chunks,
             &mut win_width,
             &mut win_height,
             delta_time,
@@ -119,7 +126,6 @@ fn main() {
 
         basic.set_mat4(&gl, "projection", projection);
         basic.set_mat4(&gl, "view", view);
-        // basic.set_mat4(&gl, "model", model);
 
         unsafe {
             gl.clear_color(0.53, 0.81, 0.92, 1.0);
@@ -138,19 +144,6 @@ fn main() {
                 gl.bind_vertex_array(Some(vao.vao));
                 gl.draw_arrays(glow::TRIANGLES, 0, vao.num_verts as i32);
             }
-
-            // gl.bind_vertex_array(Some(base_chunk.vao));
-            // gl.draw_arrays(glow::TRIANGLES, 0, base_chunk.num_verts as i32);
-
-            // model = Mat4::from_translation(vec3(
-            //     other_chunk.pos.0 as f32 * 16.0,
-            //     0.0,
-            //     other_chunk.pos.1 as f32 * 16.0,
-            // ));
-            // basic.set_mat4(&gl, "model", model);
-
-            // gl.bind_vertex_array(Some(other_chunk.vao));
-            // gl.draw_arrays(glow::TRIANGLES, 0, other_chunk.num_verts as i32);
         }
 
         window.gl_swap_window();
@@ -238,6 +231,7 @@ fn handle_events(
     events: &mut sdl2::EventPump,
     cam: &mut camera::Camera,
     prev_keys: &mut std::collections::HashSet<sdl2::keyboard::Keycode>,
+    gen_chunks: &mut bool,
     win_width: &mut f32,
     win_height: &mut f32,
     delta_time: f32,
@@ -316,6 +310,9 @@ fn handle_events(
                 cam.get_pos().y,
                 cam.get_pos().z
             ),
+            sdl2::keyboard::Keycode::G => {
+                *gen_chunks = !(*gen_chunks);
+            }
             sdl2::keyboard::Keycode::Escape => {
                 let x = sdl.mouse().relative_mouse_mode();
                 sdl.mouse().set_relative_mouse_mode(!x);
