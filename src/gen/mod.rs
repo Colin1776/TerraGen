@@ -8,10 +8,13 @@ fn gen_chunk(x: i32, z: i32) -> chunk::Chunk {
     chunk
 }
 
-pub fn get_chunk(x: i32, z: i32) -> [i32; 262144] {
+pub fn get_chunk(x: i32, z: i32) -> chunk::Chunk {
+    let begin = std::time::Instant::now();
     let chunk = gen_chunk(x, z);
+    let elapsed = std::time::Instant::now() - begin;
+    // println!("{:?}", elapsed);
 
-    chunk.get_smth()
+    chunk
 }
 
 pub fn setup_generator(pieces: Vec<piece::Piece>) {}

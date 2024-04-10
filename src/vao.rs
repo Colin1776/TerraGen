@@ -1,4 +1,7 @@
+use std::collections::VecDeque;
+
 // use cgmath::vec3;
+use crate::gen;
 use glow::*;
 
 // type Vec3 = cgmath::Vector3<f32>;
@@ -11,7 +14,12 @@ pub struct ChunkVAO {
 }
 
 impl ChunkVAO {
-    pub fn init(gl: &glow::Context, smth: [i32; 262144], pos: (i32, i32)) -> ChunkVAO {
+    pub fn init(
+        gl: &glow::Context,
+        smth: [i32; 262144],
+        pos: (i32, i32),
+        cache: &ChunkCache,
+    ) -> ChunkVAO {
         let mut yea: Vec<f32> = Vec::new();
 
         let tex_size = 16;
@@ -43,6 +51,9 @@ impl ChunkVAO {
                                     if south != 0 {
                                         show_face = false;
                                     }
+                                } else {
+                                    // check the cache for the chunk in the -z direction
+                                    // if the chunk is in the cache then
                                 }
                             } else if face == 1 {
                                 if z != 15 {
@@ -142,6 +153,66 @@ impl ChunkVAO {
             };
 
             ret
+        }
+    }
+}
+
+pub struct ChunkCache {
+    cache: VecDeque<gen::chunk::Chunk>,
+    num_adds_till_remove: u32, // need a better name for this lol
+    num_removals: u32,
+    num_next_removals: u32,
+    incr_num_next_removals: bool,
+}
+
+impl ChunkCache {
+    pub fn init() -> ChunkCache {
+        let cache: VecDeque<gen::chunk::Chunk> = VecDeque::new();
+
+        ChunkCache {
+            cache,
+            num_adds_till_remove: 8,
+            num_removals: 1,
+            num_next_removals: 1,
+            incr_num_next_removals: false,
+        }
+    }
+
+    pub fn add_chunk(&mut self, chunk: gen::chunk::Chunk) {
+        self.cache.push_back(chunk);
+
+        // keeps track of how many additions to the cache before we remove from the cache again
+        if self.num_adds_till_remove > 0 {
+            self.num_adds_till_remove -= 1;
+        }
+
+        // if the removal tracker is 0, then check to see if we should remove a chunk from the cache
+        if self.num_adds_till_remove == 0 {
+            // if we still have chunks to remove from cache, don't reset the number of adds
+            if self.num_removals > 0 {
+                self.cache.pop_front();
+                self.num_removals -= 1;
+            }
+
+            // reset number of adds (its always going to be 3)
+            if self.num_removals == 0 {
+                self.num_removals = self.num_next_removals;
+                self.incr_num_next_removals = !self.incr_num_next_removals;
+
+                if self.incr_num_next_removals {
+                    self.num_next_removals += 1;
+                }
+
+                self.num_adds_till_remove = 3;
+            }
+        }
+    }
+
+    pub fn print_cache(&self) {
+        let iter = self.cache.iter();
+
+        for chunk in iter {
+            println!("Chunk pos: {}, {}", chunk.x, chunk.z);
         }
     }
 }

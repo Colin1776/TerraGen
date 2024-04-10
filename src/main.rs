@@ -48,6 +48,7 @@ fn main() {
     });
 
     /* Generate chunks and vaos */
+    let mut cache = vao::ChunkCache::init();
     let mut chunk_vaos: Vec<vao::ChunkVAO> = Vec::new();
 
     let mut gen = Generator::init();
@@ -55,7 +56,8 @@ fn main() {
     {
         let next_chunk = gen.next();
         let chunk = gen::get_chunk(next_chunk.0, next_chunk.1);
-        let chunk_vao = vao::ChunkVAO::init(&gl, chunk, next_chunk);
+        let chunk_vao = vao::ChunkVAO::init(&gl, chunk.get_smth(), next_chunk, &cache);
+        cache.add_chunk(chunk);
         chunk_vaos.push(chunk_vao);
     }
 
@@ -90,15 +92,16 @@ fn main() {
 
         if fps_timer >= 1.0 {
             let fps = 1.0 / delta_time;
-            println!("{}", fps);
+            // println!("{}", fps);
             fps_timer = 0.0;
         }
 
-        if gen_timer >= 0.05 {
+        if gen_timer >= 0.01 {
             if gen_chunks {
                 let next_chunk = gen.next();
                 let chunk = gen::get_chunk(next_chunk.0, next_chunk.1);
-                let chunk_vao = vao::ChunkVAO::init(&gl, chunk, next_chunk);
+                let chunk_vao = vao::ChunkVAO::init(&gl, chunk.get_smth(), next_chunk, &cache);
+                cache.add_chunk(chunk);
                 chunk_vaos.push(chunk_vao);
             }
             gen_timer = 0.0;
@@ -109,6 +112,7 @@ fn main() {
             &gl,
             &mut events_loop,
             &mut cam,
+            &cache,
             &mut prev_keys,
             &mut gen_chunks,
             &mut win_width,
@@ -230,6 +234,7 @@ fn handle_events(
     gl: &glow::Context,
     events: &mut sdl2::EventPump,
     cam: &mut camera::Camera,
+    cache: &vao::ChunkCache,
     prev_keys: &mut std::collections::HashSet<sdl2::keyboard::Keycode>,
     gen_chunks: &mut bool,
     win_width: &mut f32,
@@ -286,12 +291,21 @@ fn handle_events(
 
     *prev_keys = keys;
 
-    let mut speed: f32 = 2.5 * delta_time;
+    let mut speed_mult = 2.5;
+
+    for key in &current_keys {
+        match key {
+            sdl2::keyboard::Keycode::LCtrl => speed_mult *= 10 as f32,
+
+            _ => {}
+        }
+    }
+
+    let speed: f32 = speed_mult * delta_time;
 
     for key in current_keys {
         match key {
-            sdl2::keyboard::Keycode::LCtrl => speed *= 10 as f32,
-            sdl2::keyboard::Keycode::W => cam.move_forward(speed as f32),
+            sdl2::keyboard::Keycode::W => cam.move_forward(speed),
             sdl2::keyboard::Keycode::A => cam.move_right(-speed),
             sdl2::keyboard::Keycode::S => cam.move_forward(-speed),
             sdl2::keyboard::Keycode::D => cam.move_right(speed),
@@ -316,6 +330,9 @@ fn handle_events(
             sdl2::keyboard::Keycode::Escape => {
                 let x = sdl.mouse().relative_mouse_mode();
                 sdl.mouse().set_relative_mouse_mode(!x);
+            }
+            sdl2::keyboard::Keycode::F => {
+                cache.print_cache();
             }
 
             _ => {}
